@@ -48,10 +48,25 @@ using namespace emscripten;
                     &pcl::SACSegmentation<PointT>::setOptimizeCoefficients)                      \
           .function("segment", &pcl::SACSegmentation<PointT>::segment);
 
+#define BIND_SACSegmentationFromNormals(PointT, PointNT)                                                 \
+  class_<pcl::SACSegmentationFromNormals<PointT, PointNT>, base<pcl::SACSegmentation<PointT>>>(         \
+      "SACSegmentationFromNormals" BOOST_PP_STRINGIZE(PointT) BOOST_PP_STRINGIZE(PointNT))              \
+          .constructor<bool>()                                                                          \
+          .function("setInputNormals", &pcl::SACSegmentationFromNormals<PointT, PointNT>::setInputNormals) \
+          .function("getInputNormals", &pcl::SACSegmentationFromNormals<PointT, PointNT>::getInputNormals) \
+          .function("setNormalDistanceWeight", &pcl::SACSegmentationFromNormals<PointT, PointNT>::setNormalDistanceWeight) \
+          .function("getNormalDistanceWeight", &pcl::SACSegmentationFromNormals<PointT, PointNT>::getNormalDistanceWeight) \
+          .function("setMinMaxOpeningAngle", &pcl::SACSegmentationFromNormals<PointT, PointNT>::setMinMaxOpeningAngle) \
+          .function("setDistanceFromOrigin", &pcl::SACSegmentationFromNormals<PointT, PointNT>::setDistanceFromOrigin) \
+          .function("getDistanceFromOrigin", &pcl::SACSegmentationFromNormals<PointT, PointNT>::getDistanceFromOrigin) \
+          .function("segment", &pcl::SACSegmentationFromNormals<PointT, PointNT>::segment);
+
 EMSCRIPTEN_BINDINGS(segmentation) {
   BOOST_PP_SEQ_FOR_EACH(BIND_MinCutSegmentation, , XYZ_POINT_TYPES);
 
   BOOST_PP_SEQ_FOR_EACH(BIND_SACSegmentation, , (PointXYZ));
+
+  BIND_SACSegmentationFromNormals(PointXYZ, Normal);
 
   register_vector<PointIndices>("VectorPointIndices");
 }

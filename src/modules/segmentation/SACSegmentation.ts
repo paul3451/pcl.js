@@ -1,5 +1,5 @@
 import { XYZPointTypes, PointXYZ } from '@/modules/common/point-types';
-import { PointCloud, PointIndices } from '@/modules/common/PointCloud';
+import { PointCloud, PointIndices, Indices } from '@/modules/common/PointCloud';
 import ModelCoefficients from '@/modules/common/ModelCoefficients';
 import { UnionToIntersection } from '@/types';
 import PCLBase from '@/modules/common/PCLBase';
@@ -10,7 +10,7 @@ import { toXYZPointCloud } from '@/modules/common/utils';
 class SACSegmentation<
   T extends XYZPointTypes = PointXYZ & Partial<UnionToIntersection<XYZPointTypes>>,
 > extends PCLBase<T> {
-  private _modelType: SacModelTypes = -1;
+  private _modelType: SacModelTypes = 0;
   private _methodType: SacMethodTypes = 0;
   private _optimizeCoefficients = true;
   private _epsAngle = 0;
@@ -118,6 +118,29 @@ class SACSegmentation<
 
   public segment(inliers: PointIndices, modelCoefficients: ModelCoefficients) {
     this._native.segment(inliers._native, modelCoefficients._native);
+
+    // 确保内点索引被正确地同步回JavaScript对象
+    // 由于WebAssembly绑定可能没有正确地更新inliers.indices，我们需要手动同步
+    const nativeIndices = inliers._native.indices;
+    if (nativeIndices) {
+      // 检查一下内点的数量
+      const indicesSize = nativeIndices.size();
+      console.debug(`Segmentation found ${indicesSize} inliers`);
+
+      // 如果有内点，我们需要更新indices属性
+      if (indicesSize > 0) {
+        // 创建一个新的Indices对象
+        const newIndices = new Indices();
+
+        // 从原生对象中复制数据
+        for (let i = 0; i < indicesSize; i++) {
+          newIndices.push(nativeIndices.get(i));
+        }
+
+        // 更新inliers的indices属性
+        inliers.indices = newIndices;
+      }
+    }
   }
 
   /**
